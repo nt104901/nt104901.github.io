@@ -124,16 +124,16 @@
     </div>
 
     <script>
-        // Get video URL from hash
-        const hash = window.location.hash.substring(1);
-        const videoUrl = decodeURIComponent(hash);
+        // Get video URL from query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('url');
         
         const video = document.getElementById('video');
         const videoUrlSpan = document.getElementById('videoUrl');
         const errorDiv = document.getElementById('error');
 
         if (!videoUrl || !videoUrl.startsWith('http')) {
-            errorDiv.textContent = '❌ No video URL provided. Use: player.html#VIDEO_URL';
+            errorDiv.textContent = '❌ No video URL provided. Use: player.html?url=VIDEO_URL';
             errorDiv.style.display = 'block';
             videoUrlSpan.textContent = 'No URL';
         } else {
