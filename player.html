@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HLS Video Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: #0f3460;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        h1 {
+            color: #e0e0e0;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .info {
+            background: rgba(26, 26, 46, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            color: #b0b0b0;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .info p {
+            margin: 8px 0;
+            word-break: break-all;
+        }
+
+        .info strong {
+            color: #e0e0e0;
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.15);
+            color: #e57373;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #b0b0b0;
+            padding: 40px;
+            font-size: 18px;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 HLS Video Player</h1>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="video-container">
+            <video id="video" controls></video>
+        </div>
+
+        <div class="info">
+            <p><strong>Video URL:</strong> <span id="videoUrl">Loading...</span></p>
+            <button class="copy-btn" onclick="copyUrl()">📋 Copy URL</button>
+        </div>
+    </div>
+
+    <script>
+        // Get video URL from hash
+        const hash = window.location.hash.substring(1);
+        const videoUrl = decodeURIComponent(hash);
+        
+        const video = document.getElementById('video');
+        const videoUrlSpan = document.getElementById('videoUrl');
+        const errorDiv = document.getElementById('error');
+
+        if (!videoUrl || !videoUrl.startsWith('http')) {
+            errorDiv.textContent = '❌ No video URL provided. Use: player.html#VIDEO_URL';
+            errorDiv.style.display = 'block';
+            videoUrlSpan.textContent = 'No URL';
+        } else {
+            videoUrlSpan.textContent = videoUrl;
+
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+
+                hls.loadSource(videoUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    console.log('HLS manifest loaded, ready to play');
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS error:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                errorDiv.textContent = '❌ Network error - cannot load video';
+                                errorDiv.style.display = 'block';
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                errorDiv.textContent = '❌ Media error - trying to recover';
+                                errorDiv.style.display = 'block';
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                errorDiv.textContent = '❌ Fatal error - cannot play video';
+                                errorDiv.style.display = 'block';
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS support (Safari)
+                video.src = videoUrl;
+            } else {
+                errorDiv.textContent = '❌ Your browser does not support HLS playback';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function copyUrl() {
+            navigator.clipboard.writeText(videoUrl).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#4caf50';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy URL');
+            });
+        }
+    </script>
+</body>
+</html>
