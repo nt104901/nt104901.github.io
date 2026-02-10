@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Download</title>
+    <title>Download File</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,301 +15,659 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #f0f0f0;
             min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0066cc;
         }
 
         .container {
-            max-width: 600px;
-            width: 100%;
-            background: #0f3460;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            text-align: center;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
         }
 
-        h1 {
-            color: #e0e0e0;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .file-icon {
-            font-size: 80px;
-            margin: 20px 0;
-        }
-
-        .file-preview {
-            max-width: 100%;
-            max-height: 400px;
-            margin: 20px 0;
+        .download-card {
+            background: white;
             border-radius: 8px;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .file-name {
-            color: #b0b0b0;
-            font-size: 18px;
-            margin-bottom: 10px;
-            word-break: break-all;
-            padding: 15px;
-            background: rgba(26, 26, 46, 0.6);
-            border-radius: 8px;
-            border: 1px solid rgba(102, 126, 234, 0.1);
-        }
-
-        .file-size {
-            color: #9e9e9e;
-            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
             margin-bottom: 30px;
         }
 
+        .download-header {
+            background: #2c3e50;
+            padding: 25px 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .file-icon-large {
+            font-size: 60px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .file-header-info {
+            flex: 1;
+            color: white;
+        }
+
+        .file-header-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .file-header-type {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .download-button-section {
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            border-bottom: 3px solid #e0e0e0;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-message.checking {
+            display: block;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-message.ready {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
         .download-btn {
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 18px 80px;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
+            border-radius: 6px;
+            font-size: 20px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
-            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            text-transform: uppercase;
         }
 
-        .download-btn:hover {
+        .download-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
         }
 
-        .download-btn:active {
-            transform: translateY(0);
+        .download-btn:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .copy-btn {
-            padding: 10px 20px;
-            background: rgba(102, 126, 234, 0.2);
-            color: #b0b0b0;
-            border: 1px solid rgba(102, 126, 234, 0.3);
+        .download-size {
+            margin-top: 15px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 968px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: #333;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .preview-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .preview-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .file-preview {
+            max-width: 100%;
+            max-height: 600px;
+            display: block;
+            margin: 0 auto;
             border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-preview:hover {
+            opacity: 0.95;
+        }
+
+        .text-preview {
+            max-height: 500px;
+            overflow: auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .text-preview pre {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .markdown-preview {
+            color: #333;
+            line-height: 1.7;
+        }
+
+        .markdown-preview h1,
+        .markdown-preview h2,
+        .markdown-preview h3 {
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+        }
+
+        .pdf-canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        .pdf-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .pdf-controls button {
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
         }
 
-        .copy-btn:hover {
-            background: rgba(102, 126, 234, 0.3);
-            color: #e0e0e0;
+        .pdf-controls button:hover:not(:disabled) {
+            background: #0052a3;
         }
 
-        .error {
-            background: rgba(244, 67, 54, 0.15);
-            color: #e57373;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #f44336;
-            margin-bottom: 20px;
+        .pdf-controls button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
         }
 
-        .info {
-            background: rgba(26, 26, 46, 0.6);
-            padding: 15px;
-            border-radius: 8px;
-            color: #b0b0b0;
-            border: 1px solid rgba(102, 126, 234, 0.1);
-            margin-top: 20px;
+        .pdf-page-info {
+            color: #666;
             font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+        }
+
+        .modal-content {
+            position: relative;
+            margin: auto;
+            display: block;
+            max-width: 95%;
+            max-height: 95%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: #fff;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            color: #4caf50;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">📁 FileShare</div>
+        </div>
+    </div>
+
     <div class="container">
-        <h1>📁 File Download</h1>
-        
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div id="content" style="display: none;">
-            <div class="file-icon" id="fileIcon">📄</div>
-            <img id="filePreview" class="file-preview" alt="File preview">
-            <div class="file-name" id="fileName">Loading...</div>
-            <div class="file-size" id="fileSize"></div>
-            <div class="file-type" id="fileType" style="color: #9e9e9e; font-size: 14px; margin-bottom: 20px;"></div>
-            
-            <a id="downloadBtn" class="download-btn" download>
-                ⬇️ Download File
-            </a>
-            
-            <br>
-            
-            <button class="copy-btn" onclick="copyUrl()">📋 Copy Direct Link</button>
-            
-            <div class="info">
-                <strong>Direct URL:</strong><br>
-                <span id="fileUrl" style="word-break: break-all;"></span>
+        <div class="download-card">
+            <div class="download-header">
+                <div class="file-icon-large" id="fileIconLarge">📄</div>
+                <div class="file-header-info">
+                    <div class="file-header-name" id="fileHeaderName">Loading...</div>
+                    <div class="file-header-type" id="fileHeaderType">Checking file...</div>
+                </div>
+            </div>
+
+            <div class="download-button-section">
+                <div class="status-message checking" id="statusMessage">
+                    ⏳ Verifying file availability on server...
+                </div>
+
+                <a id="downloadBtn" class="download-btn" download disabled>
+                    ⬇️ Download
+                </a>
+
+                <div class="download-size" id="downloadSize"></div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div>
+                <div class="preview-card" id="previewCard">
+                    <div class="preview-title">📋 File Preview</div>
+                    <img id="imagePreview" class="file-preview" alt="Preview" onclick="openModal()" style="display: none;">
+                    <div id="textPreview" class="text-preview" style="display: none;"></div>
+                    <div id="pdfViewer" class="pdf-viewer" style="display: none;">
+                        <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+                        <div class="pdf-controls">
+                            <button onclick="prevPage()" id="prevBtn">← Prev</button>
+                            <span class="pdf-page-info">
+                                Page <span id="pageNum">1</span> / <span id="pageCount">1</span>
+                            </span>
+                            <button onclick="nextPage()" id="nextBtn">Next →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="info-card">
+                    <div class="info-title">📄 File Details</div>
+                    <div class="info-row">
+                        <div class="info-label">File name:</div>
+                        <div class="info-value" id="infoFileName">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">File size:</div>
+                        <div class="info-value" id="infoFileSize">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">File type:</div>
+                        <div class="info-value" id="infoFileType">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Direct URL:</div>
+                        <div class="info-value" id="infoFileUrl" style="font-size: 12px; font-family: monospace;">-</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
     <script>
-        // Get file URL from query parameter
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         const urlParams = new URLSearchParams(window.location.search);
         const fileUrl = urlParams.get('url');
         let fileName = urlParams.get('name');
         
-        // If name not provided, try to extract from URL
         if (!fileName && fileUrl) {
             const urlParts = fileUrl.split('/');
-            fileName = urlParts[urlParts.length - 1] || 'file';
+            fileName = decodeURIComponent(urlParts[urlParts.length - 1]) || 'file';
         } else if (!fileName) {
             fileName = 'file';
         }
-        
-        const errorDiv = document.getElementById('error');
-        const contentDiv = document.getElementById('content');
-        const fileNameSpan = document.getElementById('fileName');
-        const fileSizeSpan = document.getElementById('fileSize');
-        const fileTypeSpan = document.getElementById('fileType');
-        const fileUrlSpan = document.getElementById('fileUrl');
+
+        const statusMessage = document.getElementById('statusMessage');
         const downloadBtn = document.getElementById('downloadBtn');
-        const fileIcon = document.getElementById('fileIcon');
-        const filePreview = document.getElementById('filePreview');
+        const previewCard = document.getElementById('previewCard');
+        const imagePreview = document.getElementById('imagePreview');
+        const textPreview = document.getElementById('textPreview');
+        const pdfViewer = document.getElementById('pdfViewer');
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
 
         if (!fileUrl || !fileUrl.startsWith('http')) {
-            errorDiv.textContent = '❌ No file URL provided. Use: download.html?url=FILE_URL&name=FILENAME';
-            errorDiv.style.display = 'block';
+            statusMessage.className = 'status-message error';
+            statusMessage.textContent = '❌ Invalid file URL provided';
+            downloadBtn.disabled = true;
         } else {
-            contentDiv.style.display = 'block';
-            fileNameSpan.textContent = fileName;
-            fileUrlSpan.textContent = fileUrl;
+            document.getElementById('fileHeaderName').textContent = fileName;
+            document.getElementById('infoFileName').textContent = fileName;
+            document.getElementById('infoFileUrl').textContent = fileUrl;
             downloadBtn.href = fileUrl;
             downloadBtn.download = fileName;
 
-            // Set icon and type based on file extension
             const ext = fileName.split('.').pop().toLowerCase();
-            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
-            const isImage = imageExtensions.includes(ext);
-            
             const fileTypes = {
-                // Archives
                 'zip': { icon: '📦', type: 'ZIP Archive' },
                 'rar': { icon: '📦', type: 'RAR Archive' },
                 '7z': { icon: '📦', type: '7-Zip Archive' },
                 'tar': { icon: '📦', type: 'TAR Archive' },
                 'gz': { icon: '📦', type: 'GZIP Archive' },
-                // Code
                 'py': { icon: '🐍', type: 'Python Script' },
-                'js': { icon: '📜', type: 'JavaScript File' },
-                'ts': { icon: '📜', type: 'TypeScript File' },
-                'java': { icon: '☕', type: 'Java Source File' },
-                'cpp': { icon: '⚙️', type: 'C++ Source File' },
-                'c': { icon: '⚙️', type: 'C Source File' },
-                'cs': { icon: '🔷', type: 'C# Source File' },
-                'php': { icon: '🐘', type: 'PHP Script' },
-                'rb': { icon: '💎', type: 'Ruby Script' },
-                'go': { icon: '🐹', type: 'Go Source File' },
-                'rs': { icon: '🦀', type: 'Rust Source File' },
-                // Web
+                'js': { icon: '📜', type: 'JavaScript' },
+                'ts': { icon: '📜', type: 'TypeScript' },
+                'java': { icon: '☕', type: 'Java Source' },
+                'cpp': { icon: '⚙️', type: 'C++ Source' },
+                'c': { icon: '⚙️', type: 'C Source' },
                 'html': { icon: '🌐', type: 'HTML Document' },
                 'css': { icon: '🎨', type: 'CSS Stylesheet' },
                 'json': { icon: '📋', type: 'JSON Data' },
                 'xml': { icon: '📋', type: 'XML Document' },
-                // Documents
                 'txt': { icon: '📝', type: 'Text File' },
+                'md': { icon: '📝', type: 'Markdown' },
                 'pdf': { icon: '📕', type: 'PDF Document' },
                 'doc': { icon: '📄', type: 'Word Document' },
                 'docx': { icon: '📄', type: 'Word Document' },
                 'xls': { icon: '📊', type: 'Excel Spreadsheet' },
                 'xlsx': { icon: '📊', type: 'Excel Spreadsheet' },
-                'ppt': { icon: '📊', type: 'PowerPoint Presentation' },
-                'pptx': { icon: '📊', type: 'PowerPoint Presentation' },
-                // Images
                 'jpg': { icon: '🖼️', type: 'JPEG Image' },
                 'jpeg': { icon: '🖼️', type: 'JPEG Image' },
                 'png': { icon: '🖼️', type: 'PNG Image' },
                 'gif': { icon: '🖼️', type: 'GIF Image' },
                 'svg': { icon: '🖼️', type: 'SVG Image' },
                 'webp': { icon: '🖼️', type: 'WebP Image' },
-                'bmp': { icon: '🖼️', type: 'Bitmap Image' },
-                // Executables
                 'exe': { icon: '⚙️', type: 'Windows Executable' },
-                'apk': { icon: '📱', type: 'Android Package' },
-                'dmg': { icon: '💿', type: 'macOS Disk Image' },
-                'deb': { icon: '📦', type: 'Debian Package' },
-                'rpm': { icon: '📦', type: 'RPM Package' },
-                // Data
-                'csv': { icon: '📊', type: 'CSV Data' },
-                'sql': { icon: '🗄️', type: 'SQL Database' },
-                'db': { icon: '🗄️', type: 'Database File' },
-                // Other
-                'md': { icon: '📝', type: 'Markdown Document' },
-                'log': { icon: '📋', type: 'Log File' },
-                'ini': { icon: '⚙️', type: 'Configuration File' },
-                'cfg': { icon: '⚙️', type: 'Configuration File' },
-                'yaml': { icon: '⚙️', type: 'YAML Configuration' },
-                'yml': { icon: '⚙️', type: 'YAML Configuration' }
+                'apk': { icon: '📱', type: 'Android Package' }
             };
             
             const fileInfo = fileTypes[ext] || { icon: '📄', type: ext.toUpperCase() + ' File' };
-            fileIcon.textContent = fileInfo.icon;
-            fileTypeSpan.textContent = 'Type: ' + fileInfo.type;
+            document.getElementById('fileIconLarge').textContent = fileInfo.icon;
+            document.getElementById('fileHeaderType').textContent = fileInfo.type;
+            document.getElementById('infoFileType').textContent = fileInfo.type;
 
-            // Show image preview if it's an image
-            if (isImage) {
-                filePreview.src = fileUrl;
-                filePreview.style.display = 'block';
-                fileIcon.style.display = 'none';
+            checkFileExists();
+        }
+
+        async function checkFileExists() {
+            try {
+                const response = await fetch(fileUrl, { method: 'HEAD' });
                 
-                filePreview.onerror = function() {
-                    // If image fails to load, show icon instead
-                    filePreview.style.display = 'none';
-                    fileIcon.style.display = 'block';
-                };
-            }
+                if (response.ok) {
+                    statusMessage.className = 'status-message ready';
+                    statusMessage.textContent = '✅ File is ready to download';
+                    downloadBtn.disabled = false;
 
-            // Try to get file size
-            fetch(fileUrl, { method: 'HEAD' })
-                .then(response => {
                     const size = response.headers.get('content-length');
                     if (size) {
                         const sizeInMB = (size / 1024 / 1024).toFixed(2);
-                        fileSizeSpan.textContent = `Size: ${sizeInMB} MB`;
+                        document.getElementById('downloadSize').textContent = `(${sizeInMB} MB)`;
+                        document.getElementById('infoFileSize').textContent = sizeInMB + ' MB';
+                    } else {
+                        document.getElementById('infoFileSize').textContent = 'Unknown';
                     }
-                })
-                .catch(err => {
-                    console.log('Could not fetch file size:', err);
-                });
+
+                    loadPreview();
+                } else {
+                    statusMessage.className = 'status-message error';
+                    statusMessage.textContent = '❌ File not found on server (404)';
+                    downloadBtn.disabled = true;
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message error';
+                statusMessage.textContent = '❌ Error: ' + error.message;
+                downloadBtn.disabled = true;
+            }
         }
 
-        function copyUrl() {
-            navigator.clipboard.writeText(fileUrl).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                btn.style.background = 'rgba(76, 175, 80, 0.3)';
-                btn.style.color = '#81c784';
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.background = '';
-                    btn.style.color = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert('Failed to copy URL');
-            });
+        function loadPreview() {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
+            const textExtensions = ['txt', 'md', 'json', 'xml', 'csv', 'log', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'html', 'css', 'yaml', 'yml'];
+            
+            if (imageExtensions.includes(ext)) {
+                previewCard.style.display = 'block';
+                imagePreview.src = fileUrl;
+                imagePreview.style.display = 'block';
+                imagePreview.onerror = () => {
+                    previewCard.style.display = 'none';
+                };
+            } else if (ext === 'pdf') {
+                previewCard.style.display = 'block';
+                pdfViewer.style.display = 'block';
+                loadPDF(fileUrl);
+            } else if (textExtensions.includes(ext)) {
+                previewCard.style.display = 'block';
+                textPreview.style.display = 'block';
+                loadTextPreview(ext);
+            }
         }
+
+        async function loadTextPreview(ext) {
+            try {
+                const response = await fetch(fileUrl);
+                const text = await response.text();
+                const previewText = text.length > 5000 ? text.substring(0, 5000) + '\n\n... (truncated)' : text;
+                
+                if (ext === 'md') {
+                    textPreview.innerHTML = '<div class="markdown-preview">' + marked.parse(previewText) + '</div>';
+                } else {
+                    textPreview.innerHTML = '<pre>' + escapeHtml(previewText) + '</pre>';
+                }
+            } catch (err) {
+                previewCard.style.display = 'none';
+            }
+        }
+
+        async function loadPDF(url) {
+            try {
+                pdfDoc = await pdfjsLib.getDocument(url).promise;
+                document.getElementById('pageCount').textContent = pdfDoc.numPages;
+                renderPage(pageNum);
+            } catch (err) {
+                console.error('PDF load error:', err);
+                pdfViewer.style.display = 'none';
+            }
+        }
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(page => {
+                const canvas = document.getElementById('pdfCanvas');
+                const ctx = canvas.getContext('2d');
+                const viewport = page.getViewport({ scale: 1.5 });
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(() => {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            document.getElementById('pageNum').textContent = num;
+            document.getElementById('prevBtn').disabled = (num <= 1);
+            document.getElementById('nextBtn').disabled = (num >= pdfDoc.numPages);
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function prevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function nextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function openModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = fileUrl;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
     </script>
 </body>
 </html>
