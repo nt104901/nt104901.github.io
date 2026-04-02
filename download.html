@@ -6,6 +6,7 @@
     <title>Download File</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="playerjs.js"></script>
     <style>
         * {
             margin: 0;
@@ -393,6 +394,7 @@
             <div>
                 <div class="preview-card" id="previewCard">
                     <div class="preview-title">📋 File Preview</div>
+                    <div id="videoPlayer" style="display: none; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;"></div>
                     <img id="imagePreview" class="file-preview" alt="Preview" onclick="openModal()" style="display: none;">
                     <div id="textPreview" class="text-preview" style="display: none;"></div>
                     <div id="pdfViewer" class="pdf-viewer" style="display: none;">
@@ -552,7 +554,19 @@
             const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
             const textExtensions = ['txt', 'md', 'json', 'xml', 'csv', 'log', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'html', 'css', 'yaml', 'yml'];
             
-            if (imageExtensions.includes(ext)) {
+            // Проверяем, является ли файл HLS плейлистом
+            if (ext === 'm3u8') {
+                previewCard.style.display = 'block';
+                const videoPlayer = document.getElementById('videoPlayer');
+                videoPlayer.style.display = 'block';
+                
+                // Инициализируем Playerjs
+                new Playerjs({
+                    id: "videoPlayer",
+                    file: fileUrl,
+                    poster: ""
+                });
+            } else if (imageExtensions.includes(ext)) {
                 previewCard.style.display = 'block';
                 imagePreview.src = fileUrl;
                 imagePreview.style.display = 'block';
