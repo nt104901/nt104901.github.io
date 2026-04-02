@@ -552,6 +552,7 @@
         function loadPreview() {
             const ext = fileName.split('.').pop().toLowerCase();
             const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
+            const videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
             const textExtensions = ['txt', 'md', 'json', 'xml', 'csv', 'log', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'html', 'css', 'yaml', 'yml'];
             
             // Проверяем, является ли файл HLS плейлистом
@@ -560,7 +561,19 @@
                 const videoPlayer = document.getElementById('videoPlayer');
                 videoPlayer.style.display = 'block';
                 
-                // Инициализируем Playerjs
+                // Инициализируем Playerjs для HLS
+                new Playerjs({
+                    id: "videoPlayer",
+                    file: fileUrl,
+                    poster: ""
+                });
+            } else if (videoExtensions.includes(ext)) {
+                // Обычное видео (не HLS)
+                previewCard.style.display = 'block';
+                const videoPlayer = document.getElementById('videoPlayer');
+                videoPlayer.style.display = 'block';
+                
+                // Инициализируем Playerjs для обычного видео
                 new Playerjs({
                     id: "videoPlayer",
                     file: fileUrl,
